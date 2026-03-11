@@ -1,0 +1,79 @@
+import collections
+
+# --- Логіка криптографії ---
+ALPHABET = 'абвгдежзийклмнопрстуфхцчшщъыьэюя'
+M = len(ALPHABET)  # m = 32
+
+# Еталонні частоти російської мови
+RUS_FREQS = {
+    'о': 0.1097, 'е': 0.0844, 'а': 0.0801, 'и': 0.0735, 'н': 0.0670,
+    'т': 0.0626, 'с': 0.0547, 'р': 0.0473, 'в': 0.0454, 'л': 0.0440,
+    'к': 0.0349, 'м': 0.0321, 'д': 0.0298, 'п': 0.0281, 'у': 0.0262,
+    'я': 0.0201, 'ы': 0.0190, 'ь': 0.0174, 'г': 0.0170, 'з': 0.0165,
+    'б': 0.0159, 'ч': 0.0144, 'й': 0.0121, 'х': 0.0097, 'ж': 0.0094,
+    'ш': 0.0073, 'ю': 0.0064, 'ц': 0.0048, 'щ': 0.0036, 'э': 0.0032,
+    'ф': 0.0026, 'ъ': 0.0004
+}
+
+def filter_text(text):
+    text = text.lower().replace('ё', 'е')
+    return ''.join(c for c in text if c in ALPHABET)
+
+def vigenere_decrypt(text, key):
+    decrypted = []
+    key_len = len(key)
+    for i, char in enumerate(text):
+        y_i = ALPHABET.index(char)
+        k_i = ALPHABET.index(key[i % key_len])
+        x_i = (y_i - k_i) % M
+        decrypted.append(ALPHABET[x_i])
+    return ''.join(decrypted)
+
+def find_key_length_dr(ciphertext, max_len=40):
+    dr_values = {}
+    n = len(ciphertext)
+    for r in range(2, max_len + 1):
+        dr = sum(1 for i in range(n - r) if ciphertext[i] == ciphertext[i + r])
+        dr_values[r] = dr
+    return dr_values
+
+def find_key_perfect(ciphertext, key_len):
+    key = []
+    for i in range(key_len):
+        block = ciphertext[i::key_len]
+        counts = collections.Counter(block)
+        max_mg = 0
+        best_g = 0
+        for g in range(M):
+            mg = 0
+            for t_char, p_t in RUS_FREQS.items():
+                tg_idx = (ALPHABET.index(t_char) + g) % M
+                tg_char = ALPHABET[tg_idx]
+                mg += p_t * counts.get(tg_char, 0)
+            if mg > max_mg:
+                max_mg = mg
+                best_g = g
+        key.append(ALPHABET[best_g])
+    return ''.join(key)
+
+# --- Консольна частина ---
+if __name__ == "__main__":
+    raw_text = input("Вставте шифртекст: ")
+    text = filter_text(raw_text)
+    if not text:
+        print("Немає допустимих букв для обробки.")
+        exit()
+
+    # 1. Шукаємо довжину ключа
+    dr_stats = find_key_length_dr(text, max_len=40)
+    best_r = max(dr_stats, key=dr_stats.get)
+    print(f"Приблизна довжина ключа (Dr): {best_r}")
+
+    # 2. Знаходимо точний ключ
+    found_key = find_key_perfect(text, best_r)
+    print(f"Знайдений ключ: {found_key}")
+
+    # 3. Розшифровуємо текст
+    decrypted = vigenere_decrypt(text, found_key)
+    print("\n--- Розшифрований текст ---\n")
+    print(decrypted)
