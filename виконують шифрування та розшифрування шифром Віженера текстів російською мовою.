@@ -1,0 +1,71 @@
+import sys
+
+# Алфавіт з 32 літер
+ALPHABET = 'абвгдежзийклмнопрстуфхцчшщъыьэюя'
+M = len(ALPHABET)
+
+
+def filter_text(text):
+    """Нижній регістр, заміна ё -> е, видалення неалфавітних символів."""
+    text = text.lower().replace('ё', 'е')
+    return ''.join(c for c in text if c in ALPHABET)
+
+
+def vigenere(text, key, mode='encrypt'):
+    text = filter_text(text)
+    key = filter_text(key)
+    if not text or not key:
+        return "Помилка: Текст або ключ порожні!"
+
+    result = []
+    k_len = len(key)
+
+    for i in range(len(text)):
+        x_idx = ALPHABET.index(text[i])
+        k_idx = ALPHABET.index(key[i % k_len])
+
+        if mode == 'encrypt':
+            new_idx = (x_idx + k_idx) % M
+        else:
+            new_idx = (x_idx - k_idx) % M
+
+        result.append(ALPHABET[new_idx])
+
+    return ''.join(result)
+
+
+def main():
+    print("--- Шифр Віженера (Російський алфавіт, 32 літери) ---")
+
+    while True:
+        print("\nВиберіть дію:")
+        print("1. Зашифрувати")
+        print("2. Розшифрувати")
+        print("3. Вихід")
+
+        choice = input("\nВаш вибір (1/2/3): ")
+
+        if choice == '3':
+            print("Бувай!")
+            break
+
+        if choice in ['1', '2']:
+            mode = 'encrypt' if choice == '1' else 'decrypt'
+
+            print(f"\nВведіть текст для {'шифрування' if mode == 'encrypt' else 'розшифрування'}:")
+            text_input = input("> ")
+
+            print("Введіть ключ:")
+            key_input = input("> ")
+
+            result = vigenere(text_input, key_input, mode)
+
+            print("\n" + "=" * 20)
+            print(f"РЕЗУЛЬТАТ:\n{result}")
+            print("=" * 20)
+        else:
+            print("Невірний вибір, спробуйте ще раз.")
+
+
+if __name__ == "__main__":
+    main()
